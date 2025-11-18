@@ -1,5 +1,4 @@
-# murim-slop
-
+# short-term-memory
 
 A very simple backend API that manages a local SQLite database of novels and their corresponding characters.
 
@@ -7,8 +6,8 @@ A very simple backend API that manages a local SQLite database of novels and the
 
 
 ```bash
-git clone https://github.com/v-mstrs/murim-slop.git
-cd murim-slop
+git clone https://github.com/v-mstrs/short-term-memory.git
+cd short-term-memory
 ```
 
 ```bash
