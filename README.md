@@ -34,3 +34,5 @@ python populate_db.py
 uvicorn app.main:app --reload
 ```
 
+Checking http://127.0.0.1:8000/novel/the-great-heavenly-demon-sovereign you can see the list of characters.
+
