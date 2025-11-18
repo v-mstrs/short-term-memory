@@ -19,7 +19,7 @@ app = FastAPI(lifespan=lifespan)
 app.add_middleware(
     CORSMiddleware,
     # add website or just do "*" since it's local prob safe idk
-    allow_origins = ["https://xyzscans.com", "null"],
+    allow_origins = ["https://novatls.com", "null"],
     allow_credentials = True,
     allow_methods = ["*"],
     allow_headers = ["*"]
@@ -73,15 +73,26 @@ def add_character(slug: str, character: CharacterCreate, session: Session = Depe
     ).scalar_one_or_none()
 
     if existing:
-        if character.description:
+        updated = False
+
+        if character.description is not None:
             existing.description = character.description
+            updated = True
+        
+        if character.image_url is not None:
+            existing.image_url = character.image_url
+            updated = True
+        
+        if updated:
             session.commit()
             session.refresh(existing)
+
         return existing
 
     new_character = Character(
         name=character.name, 
         description=character.description, 
+        image_url=character.image_url,
         novel_id=novel.id
     )
     session.add(new_character)

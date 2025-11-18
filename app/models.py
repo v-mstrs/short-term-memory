@@ -17,6 +17,7 @@ class Character(Base):
     id: Mapped[int] = mapped_column(Integer, primary_key=True)
     name: Mapped[str] = mapped_column(String, index=True)
     description: Mapped[str] = mapped_column(Text)
+    image_url: Mapped[str | None] = mapped_column(String, nullable=True)
     novel_id: Mapped[int] = mapped_column(ForeignKey("novels.id"))
 
     novel: Mapped["Novel"] = relationship("Novel", back_populates="characters")
