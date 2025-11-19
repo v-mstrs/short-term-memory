@@ -5,8 +5,8 @@ from sqlalchemy import select
 from contextlib import asynccontextmanager
 from .database import get_db, init_db
 from .models import Novel, Character
-from .schemas import NovelBase, NovelRead, CharacterCreate, CharacterBase
-from sqlalchemy import select
+from .schemas import NovelBase, NovelRead, CharacterCreate, CharacterBase, CharacterBatchCreate
+from .helpers import create_or_update_character
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
@@ -28,8 +28,7 @@ app.add_middleware(
 
 @app.get("/novels/", response_model=list[NovelBase])
 def get_list_of_novels(db: Session = Depends(get_db)):
-    result = db.execute(select(Novel))
-    novels = result.scalars().all()
+    novels = db.execute(select(Novel)).scalars().all()
 
     if not novels:
         return []
@@ -45,12 +44,11 @@ def reject_novel_base_path():
 
 @app.get("/novel/{slug}", response_model=NovelRead)
 def get_specifi_novel(slug: str, session: Session = Depends(get_db)):
-    result = session.execute(
+    novel = session.execute(
         select(Novel)
         .where(Novel.slug == slug)
         .options(selectinload(Novel.characters))
-    )
-    novel = result.scalar_one_or_none()
+    ).scalar_one_or_none()
     
     if not novel:
         raise HTTPException(404, "Novel not found.")
@@ -59,43 +57,40 @@ def get_specifi_novel(slug: str, session: Session = Depends(get_db)):
 @app.post("/novel/{slug}/add_character", response_model=CharacterBase)
 def add_character(slug: str, character: CharacterCreate, session: Session = Depends(get_db)):
     
-    result = session.execute(select(Novel).where(Novel.slug == slug))
-    novel = result.scalar_one_or_none()
+    novel = session.execute(
+        select(Novel)
+        .where(Novel.slug == slug)
+    ).scalar_one_or_none()
 
     if not novel:
         raise HTTPException(404, "Novel not found.")
 
-    existing = session.execute(
-        select(Character).where(
-            Character.name == character.name, 
-            Character.novel_id == novel.id
-        )
+    result = create_or_update_character(novel.id, character, session)
+
+    session.commit()
+    session.refresh(result)
+
+    return result
+
+@app.post("/novel/{slug}/add_characters", response_model=list[CharacterBase])
+def add_characters(slug: str, payload: CharacterBatchCreate, session: Session = Depends(get_db)):
+
+    novel = session.execute(
+        select(Novel)
+        .where(Novel.slug == slug)
     ).scalar_one_or_none()
 
-    if existing:
-        updated = False
+    if not novel:
+        raise HTTPException(404, "Novel not found.")
 
-        if character.description is not None:
-            existing.description = character.description
-            updated = True
-        
-        if character.image_url is not None:
-            existing.image_url = character.image_url
-            updated = True
-        
-        if updated:
-            session.commit()
-            session.refresh(existing)
+    results = [
+        create_or_update_character(novel.id, novel_char, session)
+        for novel_char in payload.characters
+    ]
 
-        return existing
-
-    new_character = Character(
-        name=character.name, 
-        description=character.description, 
-        image_url=character.image_url,
-        novel_id=novel.id
-    )
-    session.add(new_character)
     session.commit()
-    session.refresh(new_character)
-    return new_character
+
+    for r in results:
+        session.refresh(r)
+
+    return results
