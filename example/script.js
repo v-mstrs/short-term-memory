@@ -231,8 +231,7 @@ async function saveCharacter(data) {
     saveBtn.disabled = false;
 
     if (result) {
-        characters.push(result);
-        wrapCharacterNames(".epcontent.entry-content");
+        fetchData();
     }
 
     nameInput.value = "";
