@@ -2,7 +2,7 @@
 
 A very small and simple FastAPI backend that manages a local SQLite database of novels and their corresponding characters.
 
-## Instalation
+## Installation
 
 
 ```bash
