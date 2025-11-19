@@ -1,6 +1,6 @@
 # short-term-memory
 
-A very simple backend API that manages a local SQLite database of novels and their corresponding characters.
+A very small and simple FastAPI backend that manages a local SQLite database of novels and their corresponding characters.
 
 ## Instalation
 
