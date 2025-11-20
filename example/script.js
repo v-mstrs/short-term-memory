@@ -243,7 +243,7 @@ async function saveCharacter(data) {
 
 async function addCharacter(payload) {
     try {
-        const res = await fetch(`${url}add_character`, {
+        const res = await fetch(`${url}characters`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(payload)
