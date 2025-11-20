@@ -34,7 +34,7 @@ python populate_db.py
 uvicorn app.main:app --reload
 ```
 
-Checking http://127.0.0.1:8000/novel/the-great-heavenly-demon-sovereign you can see the list of characters. <br>
+Checking http://127.0.0.1:8000/novels/the-great-heavenly-demon-sovereign you can see the list of characters. <br>
 Now by adding some [js](example/script.js) you can do something likes this:
 
 https://github.com/user-attachments/assets/f4ef893e-14ce-480a-82d2-102a660a4d5f
