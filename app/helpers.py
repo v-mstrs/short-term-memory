@@ -14,12 +14,12 @@ def create_or_update_character(novel_id: int, char_data: CharacterCreate, sessio
     if existing_character:
         if char_data.description: 
             if existing_character.description:
-                existing_character.description += "\n" + data.description
+                existing_character.description += "\n" + char_data.description
             else:
-                existing_character = data.description
+                existing_character = char_data.description
 
-        if hasattr(data, "image_url") and data.image_url:
-            existing_character.image_url = data.image_url
+        if hasattr(char_data, "image_url") and char_data.image_url:
+            existing_character.image_url = char_data.image_url
 
         return existing_character
 
