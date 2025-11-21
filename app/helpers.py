@@ -13,7 +13,7 @@ def create_or_update_character(novel_id: int, char_data: CharacterCreate, sessio
 
     if existing_character:
         if char_data.description: 
-            if existing.description:
+            if existing_character.description:
                 existing_character.description += "\n" + data.description
             else:
                 existing_character = data.description
