@@ -26,7 +26,7 @@ app.add_middleware(
 )
 
 
-@app.get("/novels/", response_model=list[NovelBase])
+@app.get("/", response_model=list[NovelBase])
 def get_list_of_novels(db: Session = Depends(get_db)):
     novels = db.execute(select(Novel)).scalars().all()
 
@@ -35,7 +35,7 @@ def get_list_of_novels(db: Session = Depends(get_db)):
 
     return novels 
 
-@app.get("/novels/{slug}", response_model=NovelRead)
+@app.get("/{slug}", response_model=NovelRead)
 def get_specific_novel(slug: str, session: Session = Depends(get_db)):
     novel = session.execute(
         select(Novel)
@@ -47,7 +47,7 @@ def get_specific_novel(slug: str, session: Session = Depends(get_db)):
         raise HTTPException(404, "Novel not found.")
     return novel
 
-@app.post("/novels/{slug}/characters", response_model=CharacterBase)
+@app.post("/{slug}/characters", response_model=CharacterBase)
 def add_character(slug: str, character: CharacterCreate, session: Session = Depends(get_db)):
     
     novel = session.execute(
@@ -65,7 +65,7 @@ def add_character(slug: str, character: CharacterCreate, session: Session = Depe
 
     return result
 
-@app.post("/novels/{slug}/characters/batch", response_model=list[CharacterBase])
+@app.post("/{slug}/characters/batch", response_model=list[CharacterBase])
 def add_characters(slug: str, payload: CharacterBatchCreate, session: Session = Depends(get_db)):
 
     novel = session.execute(

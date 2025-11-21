@@ -1,5 +1,5 @@
 const slug = "the-great-heavenly-demon-sovereign";
-const url = `http://127.0.0.1:8000/novels/${slug}/`;
+const url = `http://127.0.0.1:8000/${slug}/`;
 
 let characters = [];
 let showImageAndDescription = true;
