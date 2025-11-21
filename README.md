@@ -25,9 +25,9 @@ source .venv/bin/activate
 ```bash
 pip install -r requirements.txt
 ```
-Then run populate_db.py to initialize the database and seed initial novel/character data
+Then run example_populate_db.py to initialize the database and seed initial novel/character data
 ```bash
-python populate_db.py
+python example_populate_db.py
 ```
 
 ```bash
