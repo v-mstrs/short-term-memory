@@ -4,28 +4,24 @@ from .models import Character
 from .schemas import CharacterCreate
 
 def create_or_update_character(novel_id: int, char_data: CharacterCreate, session: Session):
-    existing = session.execute(
+    existing_character = session.execute(
         select(Character).where(
             Character.name == char_data.name,
             Character.novel_id == novel_id
         )
     ).scalar_one_or_none()
 
-    if existing:
-        updated = False
+    if existing_character:
+        if char_data.description: 
+            if existing.description:
+                existing_character.description += "\n" + data.description
+            else:
+                existing_character = data.description
 
-        if char_data.description is not None:
-            existing.description = char_data.description
-            updated = True
+        if hasattr(data, "image_url") and data.image_url:
+            existing_character.image_url = data.image_url
 
-        if char_data.image_url is not None:
-            existing.image_url = char_data.image_url
-            updated = True
-
-        if updated:
-            session.add(existing)
-
-        return existing
+        return existing_character
 
     new_char = Character(
         name=char_data.name,
