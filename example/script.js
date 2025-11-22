@@ -1,230 +1,200 @@
-const slug = "the-great-heavenly-demon-sovereign";
-const url = `http://127.0.0.1:8000/${slug}/`;
+const SLUG = "the-great-heavenly-demon-sovereign";
+const URL = `http://127.0.0.1:8000/${SLUG}/`;
+const TOOLTIP_ID = "information-tooltip";
+const tooltip = createTooltip(); 
 
 let characters = [];
-let showImageAndDescription = true;
-let customMenu, popupContainer;
-let nameInput, descInput, imgInput, saveBtn, cancelBtn;
-
-document.addEventListener("DOMContentLoaded", fetchData);
-
-/* ----------------------------- FETCH DATA ----------------------------- */
+let customMenu;
+let wrappedCharacters = new Set();
+let saveBtn, nameInput, descInput, imgInput; 
 
 async function fetchData() {
     try {
-        const res = await fetch(url);
+        const res = await fetch(URL);
         const data = await res.json();
 
         characters = data.characters || [];
-        createPopupContainer();
-        wrapCharacterNames(".epcontent.entry-content");
+        wrapCharacterNames();
 
     } catch (err) {
         console.error("Error loading novel data:", err);
     }
 }
 
-/* **********************************************************************
-   SAFE TEXT NODE REPLACEMENT (NO REGEX ON innerHTML)
-   ********************************************************************** */
+function wrapCharacterNames() {
+    const content = document.querySelector(".epcontent.entry-content");
+    if (!content) return;
 
-function wrapCharacterNames(selector) {
-    const root = document.querySelector(selector);
-    if (!root) return;
+    let html = content.innerHTML;
 
     characters.forEach(char => {
-        const escapedName = escapeRegex(char.name);
-        const regex = new RegExp(escapedName, "gi");
+        if (!char.name || wrappedCharacters.has(char.name))
+            return;
 
-        const spanHTML =
-            `<span class="char-image" ` +
-            (char.image_url ? `data-img="${escapeHtml(char.image_url)}" ` : "") +
-            `data-desc="${escapeHtml(char.description || "")}">$&</span>`;
+        const regex = new RegExp(char.name, "gi");
 
-        replaceTextNodes(root, regex, spanHTML);
+        html = html.replace(regex, (match) => {
+            return `<span class="char-tooltip" 
+                data-img="${char.image_url || ''}" 
+                data-desc="${char.description || ''}">${match}</span>`;
+        });
+        
+        wrappedCharacters.add(char.name);
     });
 
-    root.querySelectorAll(".char-image").forEach(span => {
-        span.addEventListener("mouseenter", showPopup);
-        span.addEventListener("mouseleave", hidePopup);
-    });
-}
+    content.innerHTML = html;
 
-function replaceTextNodes(root, regex, html) {
-    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
-
-    let textNode;
-    const nodes = [];
-
-    while ((textNode = walker.nextNode())) {
-        if (regex.test(textNode.nodeValue)) {
-            nodes.push(textNode);
-        }
-    }
-
-    nodes.forEach(node => {
-        const frag = document.createElement("span");
-        frag.innerHTML = node.nodeValue.replace(
-            regex,
-            match => html.replace("$&", match)
-        );
-
-        while (frag.firstChild) {
-            node.parentNode.insertBefore(frag.firstChild, node);
-        }
-
-        node.remove();
+    document.querySelectorAll(".char-tooltip").forEach(span => {
+        span.onmouseenter = showTooltip;
+        span.onmouseleave = hideTooltip;
     });
 }
 
-function escapeRegex(str) {
-    return str.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+function createTooltip() {
+    let tooltip = document.createElement("div");
+    tooltip.id = TOOLTIP_ID;
+
+    tooltip.style.cssText = `
+    display: none; position: fixed; background: white; border: 1px solid black;
+    padding: 8px; max-width: 200px; z-index: 10000; box-shadow: 0 4px 8px rgba(0,0,0,0.1);`;
+
+    return document.body.appendChild(tooltip);
 }
 
-function escapeHtml(str) {
-    return str.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
-}
-
-/* ----------------------------- POPUP BOX ------------------------------ */
-
-function createPopupContainer() {
-    popupContainer = document.createElement("div");
-    popupContainer.id = "image-popup-box";
-
-    addGlobalStyle(`
-        #image-popup-box {
-            display: none;
-            position: absolute;
-            z-index: 99999;
-            background: #fff;
-            border: 1px solid black;
-            max-width: 180px;
-            padding: 6px;
-            font-size: 14px;
-            line-height: 1.4;
-            white-space: normal;
-            word-break: break-word;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.12);
-        }
-        #image-popup-box img {
-            max-width: 100%;
-            display: block;
-            height: auto;
-            margin-bottom: 6px;
-        }
-        #image-popup-box p {
-            color: black;
-            margin: 0;
-        }
-    `);
-
-    document.body.appendChild(popupContainer);
-}
-
-function showPopup(e) {
+function showTooltip(e) {
     const span = e.currentTarget;
-    const img = span.dataset.img;
     const desc = span.dataset.desc || "";
-
+    const img = span.dataset.img;
+    
     let html = "";
-    if (img && showImageAndDescription) html += `<img src="${img}">`;
-    if (desc) html += `<p>${desc}</p>`;
+    if (img) html += `<img src="${img}" style="max-width:100%">`;
+    if (desc) html += `<p style="color:black; margin:0;">${desc}</p>`;
 
-    popupContainer.innerHTML = html;
-    popupContainer.style.display = "block";
+    if (!html) return hideTooltip();
 
-    positionPopup(span);
-}
-
-function hidePopup() {
-    popupContainer.style.display = "none";
-}
-
-function positionPopup(span) {
+    tooltip.innerHTML = html;
+    
+    tooltip.style.display = "block"; 
+    
     const rect = span.getBoundingClientRect();
-    const popupRect = popupContainer.getBoundingClientRect();
-
-    let left = rect.left + window.scrollX;
-    let top = rect.bottom + window.scrollY + 5;
-
-    const viewportRight = window.scrollX + window.innerWidth;
-    const viewportBottom = window.scrollY + window.innerHeight;
-
-    if (left + popupRect.width > viewportRight - 8) {
-        left = viewportRight - popupRect.width - 8;
+    const tooltipRect = tooltip.getBoundingClientRect(); 
+    
+    
+    let top = rect.bottom + 5;
+    
+    if (top + tooltipRect.height > window.innerHeight) {
+        top = rect.top - tooltipRect.height - 5;
     }
-    if (left < window.scrollX + 8) {
-        left = window.scrollX + 8;
+    
+    let left = rect.left;
+    if (left + tooltipRect.width > window.innerWidth) {
+        left = window.innerWidth - tooltipRect.width - 10;
     }
-
-    if (top + popupRect.height > viewportBottom - 8) {
-        const above = rect.top + window.scrollY - popupRect.height - 5;
-        top = above >= window.scrollY + 8 ? above : viewportBottom - popupRect.height - 8;
-    }
-
-    popupContainer.style.left = `${left}px`;
-    popupContainer.style.top = `${top}px`;
+    if (left < 10) left = 10;
+    
+    Object.assign(tooltip.style, {
+        left: left + "px",
+        top: top + "px"
+    });
 }
 
-/* ----------------------------- CUSTOM MENU ---------------------------- */
+function hideTooltip() {
+    document.getElementById(TOOLTIP_ID).style.display = "none";
+}
+
+function hideMenu() {
+    if (customMenu) customMenu.style.display = "none";
+}
+
+async function saveCharacter(data) {
+    if (!data.name) return;
+
+    const originalText = saveBtn.textContent;
+
+    try {
+        saveBtn.disabled = true;
+        saveBtn.textContent = "Saving...";
+        
+        const res = await fetch(`${URL}characters`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data)
+        });
+
+        if (!res.ok) {
+            console.error("Error adding character:", await res.json());
+            saveBtn.textContent = "Error!";
+            return;
+        }
+
+        saveBtn.textContent = "Saved!";
+        fetchData();
+        
+    } catch (err) {
+        console.error("Network error:", err);
+        saveBtn.textContent = "Error!";
+        
+    } finally {
+        
+        setTimeout(() => {
+            saveBtn.textContent = originalText;
+            saveBtn.disabled = false;
+        }, 1500);
+
+        nameInput.value = "";
+        descInput.value = "";
+        imgInput.value = "";
+
+        hideMenu();
+    }
+}
 
 function createCustomMenu() {
-    addGlobalStyle(`
-        .custom-menu {
-            position: absolute;
-            background: #fff;
-            border: 1px solid #0005;
-            padding: 10px;
-            display: none;
-            z-index: 100000;
-            width: 220px;
-            font-family: sans-serif;
-        }
-        .custom-menu p {
-            margin: 0 0 6px;
-            font-weight: bold;
-        }
-        .custom-menu input {
-            width: 100%;
-            margin-bottom: 8px;
-            padding: 5px;
-        }
-        .custom-menu button {
-            padding: 5px 10px;
-            border: none;
-            cursor: pointer;
-        }
-        .custom-menu #saveChar {
-            background: #007bff;
-            color: white;
-        }
-        .custom-menu #cancelChar {
-            background: #ddd;
-        }
-    `);
-
     customMenu = document.createElement("div");
     customMenu.className = "custom-menu";
+
+    customMenu.style.cssText = `
+        position: absolute;
+        background: white;
+        border: 1px solid black;
+        padding: 10px;
+        z-index: 10000;
+        width: 250px;
+        min-width: 200px;
+        min-height: 150px;
+        display: none;
+        resize: both;
+        overflow: auto;
+        box-sizing: border-box;
+        border-radius: 6px;
+        cursor: default;
+        display: flex;
+        flex-direction: column;
+        gap: 8px; /* spacing between children */
+    `;
+
     customMenu.innerHTML = `
-        <p>Add Character</p>
-        <input id="charName" placeholder="Name">
-        <input id="charDesc" placeholder="Description">
-        <input id="charImg" placeholder="Image URL (optional)">
+        <p id="menuHeader" style="font-weight:bold; margin:0; cursor: move;">Add Character</p>
+        <input id="charName" placeholder="Name" style="width:100%; padding:4px; box-sizing:border-box;">
+        
+        <textarea id="charDesc" placeholder="Description" style="width:100%; padding:4px; box-sizing:border-box; resize:none; flex-grow: 1;"></textarea>
+        
+        <input id="charImg" placeholder="Image URL (optional)" style="width:100%; padding:4px; box-sizing:border-box;">
         <div style="text-align:right;">
-            <button id="saveChar">Save</button>
+            <button id="saveChar" style="margin-right:4px;">Save</button>
             <button id="cancelChar">Cancel</button>
         </div>
     `;
 
     document.body.appendChild(customMenu);
-
+    
+    saveBtn = customMenu.querySelector("#saveChar");
+    cancelBtn = customMenu.querySelector("#cancelChar");
     nameInput = customMenu.querySelector("#charName");
     descInput = customMenu.querySelector("#charDesc");
     imgInput = customMenu.querySelector("#charImg");
-    saveBtn = customMenu.querySelector("#saveChar");
-    cancelBtn = customMenu.querySelector("#cancelChar");
 
-    cancelBtn.onclick = () => hideMenu();
+    cancelBtn.onclick = hideMenu;
 
     saveBtn.onclick = async () => {
         const newChar = {
@@ -235,56 +205,9 @@ function createCustomMenu() {
 
         await saveCharacter(newChar);
     };
+
+    makeDraggable(customMenu, customMenu.querySelector("#menuHeader"));
 }
-
-/* --------------------------- SAVE CHARACTERS --------------------------- */
-
-async function saveCharacter(data) {
-    if (!data.name) return;
-
-    saveBtn.disabled = true;
-    const original = saveBtn.textContent;
-    saveBtn.textContent = "Saving...";
-
-    const result = await addCharacter(data);
-
-    saveBtn.textContent = result ? "Saved!" : "Error!";
-    setTimeout(() => (saveBtn.textContent = original), 1500);
-
-    saveBtn.disabled = false;
-
-    if (result) {
-        fetchData();
-    }
-
-    nameInput.value = "";
-    descInput.value = "";
-    imgInput.value = "";
-
-    hideMenu();
-}
-
-async function addCharacter(payload) {
-    try {
-        const res = await fetch(`${url}characters`, {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-
-        if (!res.ok) {
-            console.error("Error adding character:", await res.json());
-            return null;
-        }
-
-        return await res.json();
-    } catch (err) {
-        console.error("Network error:", err);
-        return null;
-    }
-}
-
-/* ----------------------------- CONTEXT MENU ---------------------------- */
 
 document.addEventListener("contextmenu", e => {
     if (!e.altKey) return;
@@ -294,23 +217,30 @@ document.addEventListener("contextmenu", e => {
 
     customMenu.style.left = `${e.pageX}px`;
     customMenu.style.top = `${e.pageY}px`;
-    customMenu.style.display = "block";
+    customMenu.style.display = "flex"; // flex keeps children responsive
 });
 
-document.addEventListener("click", e => {
-    if (customMenu && !customMenu.contains(e.target)) hideMenu();
-});
+function makeDraggable(element, handle) {
+    let offsetX = 0, offsetY = 0, isDown = false;
 
-function hideMenu() {
-    if (customMenu) customMenu.style.display = "none";
-}
+    handle.addEventListener("mousedown", e => {
+        isDown = true;
+        offsetX = e.clientX - element.offsetLeft;
+        offsetY = e.clientY - element.offsetTop;
+        document.body.style.userSelect = "none";
+    });
 
-/* ----------------------------- UTILITIES ------------------------------- */
+    document.addEventListener("mousemove", e => {
+        if (!isDown) return;
+        element.style.left = `${e.clientX - offsetX}px`;
+        element.style.top = `${e.clientY - offsetY}px`;
+    });
 
-function addGlobalStyle(css) {
-    const style = document.createElement("style");
-    style.textContent = css;
-    document.head.appendChild(style);
+    document.addEventListener("mouseup", () => {
+        isDown = false;
+        document.body.style.userSelect = "";
+    });
 }
 
 fetchData();
+createCustomMenu();
