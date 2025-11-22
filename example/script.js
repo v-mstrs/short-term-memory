@@ -24,29 +24,56 @@ async function fetchData() {
     }
 }
 
-/* ------------------------- WRAP CHARACTER NAMES ------------------------ */
+/* **********************************************************************
+   SAFE TEXT NODE REPLACEMENT (NO REGEX ON innerHTML)
+   ********************************************************************** */
 
 function wrapCharacterNames(selector) {
-    const target = document.querySelector(selector);
-    if (!target) return;
-
-    let html = target.innerHTML;
+    const root = document.querySelector(selector);
+    if (!root) return;
 
     characters.forEach(char => {
-        const escaped = escapeRegex(char.name);
-        const description = escapeHtml(char.description);
-        const img = char.image_url ? `data-img="${char.image_url}"` : "";
-        const descAttr = `data-desc="${description}"`;
+        const escapedName = escapeRegex(char.name);
+        const regex = new RegExp(escapedName, "gi");
 
-        const regex = new RegExp(escaped, "gi");
-        html = html.replace(regex, `<span class="char-image" ${img} ${descAttr}>$&</span>`);
+        const spanHTML =
+            `<span class="char-image" ` +
+            (char.image_url ? `data-img="${escapeHtml(char.image_url)}" ` : "") +
+            `data-desc="${escapeHtml(char.description || "")}">$&</span>`;
+
+        replaceTextNodes(root, regex, spanHTML);
     });
 
-    target.innerHTML = html;
-
-    target.querySelectorAll(".char-image").forEach(span => {
+    root.querySelectorAll(".char-image").forEach(span => {
         span.addEventListener("mouseenter", showPopup);
         span.addEventListener("mouseleave", hidePopup);
+    });
+}
+
+function replaceTextNodes(root, regex, html) {
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT);
+
+    let textNode;
+    const nodes = [];
+
+    while ((textNode = walker.nextNode())) {
+        if (regex.test(textNode.nodeValue)) {
+            nodes.push(textNode);
+        }
+    }
+
+    nodes.forEach(node => {
+        const frag = document.createElement("span");
+        frag.innerHTML = node.nodeValue.replace(
+            regex,
+            match => html.replace("$&", match)
+        );
+
+        while (frag.firstChild) {
+            node.parentNode.insertBefore(frag.firstChild, node);
+        }
+
+        node.remove();
     });
 }
 
@@ -55,7 +82,7 @@ function escapeRegex(str) {
 }
 
 function escapeHtml(str) {
-    return str.replace(/"/g, "&quot;");
+    return str.replace(/"/g, "&quot;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
 }
 
 /* ----------------------------- POPUP BOX ------------------------------ */
@@ -78,7 +105,6 @@ function createPopupContainer() {
             white-space: normal;
             word-break: break-word;
             box-shadow: 0 4px 8px rgba(0,0,0,0.12);
-
         }
         #image-popup-box img {
             max-width: 100%;
@@ -97,7 +123,6 @@ function createPopupContainer() {
 
 function showPopup(e) {
     const span = e.currentTarget;
-
     const img = span.dataset.img;
     const desc = span.dataset.desc || "";
 
@@ -125,7 +150,6 @@ function positionPopup(span) {
     const viewportRight = window.scrollX + window.innerWidth;
     const viewportBottom = window.scrollY + window.innerHeight;
 
-    // Adjust horizontal overflow
     if (left + popupRect.width > viewportRight - 8) {
         left = viewportRight - popupRect.width - 8;
     }
@@ -133,7 +157,6 @@ function positionPopup(span) {
         left = window.scrollX + 8;
     }
 
-    // Adjust vertical overflow
     if (top + popupRect.height > viewportBottom - 8) {
         const above = rect.top + window.scrollY - popupRect.height - 5;
         top = above >= window.scrollY + 8 ? above : viewportBottom - popupRect.height - 8;
