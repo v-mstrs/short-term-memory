@@ -27,7 +27,7 @@ app.add_middleware(
 
 
 @app.get("/", response_model=list[NovelBase])
-def get_list_of_novels(db: Session = Depends(get_db)):
+def get_list_of_novels(db: Session = Depends(get_db)) -> list[NovelBase]:
     novels = db.execute(select(Novel)).scalars().all()
 
     if not novels:
@@ -36,7 +36,7 @@ def get_list_of_novels(db: Session = Depends(get_db)):
     return novels 
 
 @app.get("/{slug}", response_model=NovelRead)
-def get_specific_novel(slug: str, session: Session = Depends(get_db)):
+def get_specific_novel(slug: str, session: Session = Depends(get_db)) -> NovelRead:
     novel = session.execute(
         select(Novel)
         .where(Novel.slug == slug)
@@ -48,7 +48,7 @@ def get_specific_novel(slug: str, session: Session = Depends(get_db)):
     return novel
 
 @app.post("/{slug}/characters", response_model=CharacterBase)
-def add_character(slug: str, character: CharacterCreate, session: Session = Depends(get_db)):
+def add_character(slug: str, character: CharacterCreate, session: Session = Depends(get_db)) -> CharacterBase:
     
     novel = session.execute(
         select(Novel)
@@ -66,7 +66,7 @@ def add_character(slug: str, character: CharacterCreate, session: Session = Depe
     return result
 
 @app.post("/{slug}/characters/batch", response_model=list[CharacterBase])
-def add_characters(slug: str, payload: CharacterBatchCreate, session: Session = Depends(get_db)):
+def add_characters(slug: str, payload: CharacterBatchCreate, session: Session = Depends(get_db)) -> list[CharacterBase]:
 
     novel = session.execute(
         select(Novel)
