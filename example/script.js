@@ -128,14 +128,15 @@ async function saveCharacter(data) {
         }
 
         saveBtn.textContent = "Saved!";
-        fetchData();
-        
+
+        // Await fetchData to ensure updated characters are loaded
+        await fetchData();
+
     } catch (err) {
         console.error("Network error:", err);
         saveBtn.textContent = "Error!";
         
     } finally {
-        
         setTimeout(() => {
             saveBtn.textContent = originalText;
             saveBtn.disabled = false;
