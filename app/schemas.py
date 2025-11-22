@@ -1,4 +1,4 @@
-from typing import Optional, List
+from typing import Optional
 from pydantic import BaseModel, Field
 
 # ------ Character Schemas ------ 
@@ -14,7 +14,7 @@ class CharacterRead(CharacterBase):
     pass
 
 class CharacterBatchCreate(BaseModel):
-    characters: List[CharacterCreate]
+    characters: list[CharacterCreate]
 
 # ------ Novel Schemas ------
 class NovelBase(BaseModel):
