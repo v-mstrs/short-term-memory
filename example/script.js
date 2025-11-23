@@ -222,13 +222,16 @@ document.addEventListener("contextmenu", e => {
 });
 
 function makeDraggable(element, handle) {
-    let offsetX = 0, offsetY = 0, isDown = false;
+    let isDown = false;
+    let offsetX = 0;
+    let offsetY = 0;
 
     handle.addEventListener("mousedown", e => {
         isDown = true;
         offsetX = e.clientX - element.offsetLeft;
         offsetY = e.clientY - element.offsetTop;
-        document.body.style.userSelect = "none";
+        element.style.cursor = "grabbing";
+        document.body.style.userSelect = "none"; // prevent text selection
     });
 
     document.addEventListener("mousemove", e => {
@@ -238,7 +241,9 @@ function makeDraggable(element, handle) {
     });
 
     document.addEventListener("mouseup", () => {
+        if (!isDown) return;
         isDown = false;
+        element.style.cursor = "default";
         document.body.style.userSelect = "";
     });
 }
