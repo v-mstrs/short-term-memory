@@ -249,4 +249,3 @@ function makeDraggable(element, handle) {
 }
 
 fetchData();
-createCustomMenu();
