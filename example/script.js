@@ -173,14 +173,20 @@ function createCustomMenu() {
         flex-direction: column;
         gap: 8px; /* spacing between children */
     `;
-
     customMenu.innerHTML = `
         <p id="menuHeader" style="font-weight:bold; margin:0; cursor: move;">Add Character</p>
+
         <input id="charName" placeholder="Name" style="width:100%; padding:4px; box-sizing:border-box;">
-        
+
         <textarea id="charDesc" placeholder="Description" style="width:100%; padding:4px; box-sizing:border-box; resize:none; flex-grow: 1;"></textarea>
-        
+
         <input id="charImg" placeholder="Image URL (optional)" style="width:100%; padding:4px; box-sizing:border-box;">
+
+        <select id="charMode" style="width:100%; padding:4px; margin-top:4px; box-sizing:border-box;">
+            <option value="append">Append Description</option>
+            <option value="overwrite">Overwrite Description</option>
+        </select>
+
         <div style="text-align:right;">
             <button id="saveChar" style="margin-right:4px;">Save</button>
             <button id="cancelChar">Cancel</button>
@@ -194,6 +200,7 @@ function createCustomMenu() {
     nameInput = customMenu.querySelector("#charName");
     descInput = customMenu.querySelector("#charDesc");
     imgInput = customMenu.querySelector("#charImg");
+    modeInput = customMenu.querySelector("#charMode");
 
     cancelBtn.onclick = hideMenu;
 
@@ -201,9 +208,10 @@ function createCustomMenu() {
         const newChar = {
             name: nameInput.value.trim(),
             description: descInput.value.trim(),
-            image_url: imgInput.value.trim() || null
+            image_url: imgInput.value.trim() || null,
+            mode: modeInput.value
         };
-
+        
         await saveCharacter(newChar);
     };
 

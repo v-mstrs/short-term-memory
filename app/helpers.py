@@ -12,14 +12,16 @@ def create_or_update_character(novel_id: int, char_data: CharacterCreate, sessio
         )
     ).scalar_one_or_none() 
 
-    if existing_character:
-        if char_data.description: 
+    if char_data.description is not None: 
+        if char_data.mode == "overwrite":
+            existing_character.description = char_data.description
+        elif char_data.mode == "append":
             if existing_character.description:
                 existing_character.description += "\n" + char_data.description
             else:
                 existing_character.description = char_data.description
 
-        if hasattr(char_data, "image_url") and char_data.image_url:
+        if char_data.image_url:
             existing_character.image_url = char_data.image_url
 
         return existing_character
